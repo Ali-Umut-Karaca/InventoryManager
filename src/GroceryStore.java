@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -149,7 +150,8 @@ public class GroceryStore {
 		frame.setBounds(100, 100, 601, 461);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout(0, 0));
-		frame.setTitle("Inventory Manager");
+		//String splt [] = fileName.split(Pattern.quote(File.separator));
+		frame.setTitle("Inventory Manager - " + fileName);
 		
 		JScrollPane scrollPane = new JScrollPane();
 		frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -419,6 +421,8 @@ public class GroceryStore {
 									col--;
 									continue;
 								}
+								else {
+								}
 							}
 							
 						}
@@ -469,6 +473,7 @@ public class GroceryStore {
 				}
 				if(!problem) {
 					itemList.add(str);
+					databaseList.add(str); // Add to the original list as well.
 					str[3] += " $";
 					model.addRow(str);
 				}
@@ -490,6 +495,10 @@ public class GroceryStore {
 					if (model.getValueAt(row, 0).toString().equals(str)) {
 						model.removeRow(row);
 						itemList.list.remove(row);
+						
+						databaseList.removeIf(a -> a[0].equals(str));
+						
+						databaseList.forEach(a -> System.out.println(Arrays.toString(a))); // Print databaseList
 						itemList.printList();
 					}
 				}
@@ -807,6 +816,29 @@ public class GroceryStore {
 		//sqlHandler.writeRow(itemList.listToDoubleArray()[15]);
 	}
 	
+	
+	public void removeLineFromFile(String fileName, String lineToRemove) {
+	    try {
+	        Path file = Path.of(fileName);
+
+	        if (!Files.exists(file)) {
+	            System.out.println("Parameter is not an existing file");
+	            return;
+	        }
+
+	        List<String> allLines = Files.readAllLines(file);
+
+	        allLines.removeIf(line -> line.trim().split(",")[0].equals(lineToRemove));
+
+	        Files.write(file, allLines);
+
+	    } catch (IOException ex) {
+	        ex.printStackTrace();
+	    }
+	}
+	
+	
+	/*		DEPRECATED METHOD
 	    public void removeLineFromFile(String fileName, String lineToRemove) {
 	    	
 	    try {
@@ -857,7 +889,7 @@ public class GroceryStore {
 	      ex.printStackTrace();
 	    }
 	  }
-
+	*/
 	public DefaultTableModel getModel() {
 		return model;
 	}

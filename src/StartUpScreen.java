@@ -30,7 +30,7 @@ public class StartUpScreen {
 	
 	/**
 	 * @author Ali Umut Karaca / MonteCarlo
-	 * This class is resposible for the Environment set-up 
+	 * This class is responsible for the Environment set-up 
 	 * 		that goes on before the Stock Control Program (SCP) initializes.
 	 * Gathers needed information for the SCP to properly initiate.
 	 */
@@ -38,6 +38,8 @@ public class StartUpScreen {
 	
 	private JFrame frame;
 	private String pathsFile = ApplicationParentFolderHandler.getLocalFilePath("paths.txt");
+	String DEFAULT_STRING = "ID,NAME,AMOUNT,PRICE,AVERAGE_PRICE\n";
+	String FILE_EXTENTION = ".csv";
 
 	/**
 	 * Launch the application.
@@ -118,6 +120,61 @@ public class StartUpScreen {
 		frame.getContentPane().add(lblNewLabel);
 		
 		JButton btnNewButton = new JButton("CREATE");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				JFileChooser createFilePath = new JFileChooser();
+				
+				createFilePath.setCurrentDirectory(new File(System.getProperty("user.home")));
+		        
+		        createFilePath.setDialogTitle("Select a Folder");
+		        
+		        createFilePath.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		        
+		        int result = createFilePath.showOpenDialog(null);
+		        
+		        if (result == JFileChooser.APPROVE_OPTION) {
+		            File selectedFile = createFilePath.getSelectedFile();
+		            File creatFile = new File(selectedFile.getAbsolutePath()+
+		            		"\\"+
+		            		JOptionPane.showInputDialog("Enter file name")+
+		            		FILE_EXTENTION);
+		            
+		            if(creatFile.exists()) {
+		            	JOptionPane.showMessageDialog(frame, "This File Already Exists ! Opening existing file...");
+		            }
+		            else {
+		            	try {
+							creatFile.createNewFile();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+		            }
+		            		try {
+								FileWriter fileInit = new FileWriter(creatFile);
+								fileInit.write(DEFAULT_STRING);
+								fileInit.close();
+								String fileAbsAddress = creatFile.getAbsolutePath();
+								System.out.println(fileAbsAddress);
+								
+								addPath(pathsFile,fileAbsAddress);
+								comboBox.addItem(fileAbsAddress);
+								
+								GroceryStore gs = new GroceryStore(creatFile.getAbsolutePath());
+								frame.dispose();
+								gs.frame.setVisible(true);
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+		            		; 
+		        } else {
+		        	
+		        }
+				
+			}
+		});
 		btnNewButton.setFocusable(false);
 		btnNewButton.setBounds(99, 98, 110, 55);
 		frame.getContentPane().add(btnNewButton);
@@ -272,6 +329,32 @@ public class StartUpScreen {
 	        System.out.println("Failed to remove path: " + e.getMessage());
 	        e.printStackTrace();
 	    }
+	}
+	
+	public void addPath(String file, String pathToAdd) {
+		try { 
+			Boolean lineExists = false;
+			FileWriter fw = new FileWriter(file, true);
+			BufferedReader br = Files.newBufferedReader(Path.of(file));
+			String line = br.readLine();
+			
+				while(line != null) {
+					if(line.equals(pathToAdd)) {
+						lineExists = true;
+					}
+					line = br.readLine();
+				}
+				
+			if(!lineExists)
+				fw.write(pathToAdd + "\n");
+			else
+				System.out.println("ALREADY EXISTS !");
+			br.close();
+			
+			fw.close();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 	
 	/*		DEPRECATED METHOD
