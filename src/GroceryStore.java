@@ -104,6 +104,7 @@ public class GroceryStore {
 	private double lastSearchedPrice = -1.0;
 	private JLabel Info;
 	private List<String[]> databaseList;
+	private JMenuItem mnıtmNewMenuItem_13;
 
 	/**
 	 * Launch the application.
@@ -150,7 +151,6 @@ public class GroceryStore {
 		frame.setBounds(100, 100, 601, 461);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout(0, 0));
-		//String splt [] = fileName.split(Pattern.quote(File.separator));
 		frame.setTitle("Inventory Manager - " + fileName);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -508,6 +508,73 @@ public class GroceryStore {
 				}
 			}
 		});
+		
+		mnıtmNewMenuItem_13 = new JMenuItem("Update Item by ID");
+		mnıtmNewMenuItem_13.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//String id = JOptionPane.showInputDialog("Enter the Item ID to Update");
+				
+				String [] str = new String[model.getColumnCount()-1];
+				boolean problem = false;
+				
+				for(int col = 0; col<model.getColumnCount()-1;col++) {
+					problem = false;
+					String inP = JOptionPane.showInputDialog("Enter "+model.getColumnName(col)+": ");
+					if(inP == null) {
+						problem = true;
+						break;
+					}
+					if(col == 0) {
+						try{
+							Integer.parseInt(inP);
+						}
+						catch(NumberFormatException e1) {
+							problem = true;
+							JOptionPane.showMessageDialog(frame, "Please Enter An Integer. ID");
+							col--;
+							continue;
+						}
+					}
+					else if(col == 2) {
+						try{
+							Integer.parseInt(inP);
+						}
+						catch(NumberFormatException e1) {
+							problem = true;
+							JOptionPane.showMessageDialog(frame, "Please Enter An Integer.");
+							col--;
+							continue;
+						}
+					}
+					else if(col == 3) {
+						try{
+							Double.parseDouble(inP);
+						}
+						catch(NumberFormatException e1) {
+							problem = true;
+							JOptionPane.showMessageDialog(frame, "Please Enter A Number.");
+							col--;
+							continue;
+						}
+					}
+					
+					if(col == 3) {
+						Double.parseDouble(inP);
+					}
+					
+						
+					
+					if(!problem)
+						str[col] = inP;
+					
+				}
+				databaseList.removeIf(a -> a[0].equals(str[0]));
+				databaseList.add(str);
+				loadNewFrameFromItemList(itemList.updateItemInList(str).idOrder());
+			}
+		});
+		mnNewMenu.add(mnıtmNewMenuItem_13);
 		mnNewMenu.add(mnıtmNewMenuItem_2);
 		mnNewMenu.add(mnıtmNewMenuItem);
 		
@@ -741,10 +808,11 @@ public class GroceryStore {
             	model.addRow(dStr[i]);
 			}
 		}
-		
+		/*
 		itemList.printList();
 		System.out.println(itemList.getAverage());
 		System.out.println(itemList.getAverage("Lambda"));
+		*/
 	}
 
 	public void loadFrame() {
@@ -980,6 +1048,20 @@ public class GroceryStore {
 	
 	public void setFileName(String str) {
 		fileName = str;
+	}
+	
+	public void refreshTable() {
+	    // 1. Wipe the visual table only
+	    model.setRowCount(0);
+	    
+	    // 2. Grab the current state of your safe, backend memory
+	    String[][] dStr = itemList.listToDoubleArray();
+	    
+	    // 3. Loop through and redraw (starting at 1 to skip the header row!)
+	    for (int i = 1; i < dStr.length; i++) {
+	        dStr[i][3] += " $";
+	        model.addRow(dStr[i]);
+	    }
 	}
 	
 }

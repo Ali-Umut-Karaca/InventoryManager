@@ -217,7 +217,28 @@ public class ItemList {
 		return null;
 	}
 	
-	
+	public void updateItemInList(Item item) {
+		list.removeIf(a -> a.getId() == item.getId());
+		list.add(item);
+	}
+
+	public ItemList updateItemInList(String [] itemStr) {
+		ItemList itmLst = new ItemList();
+		itmLst.list = new ArrayList<>(this.list);
+		
+		Item item = new Item(
+				Integer.parseInt(itemStr[0]),
+				itemStr[1],
+				Integer.parseInt(itemStr[2]),
+				Double.parseDouble(itemStr[3]));
+		
+		itmLst.list.removeIf(a -> a.getId() == item.getId());
+		
+		itmLst.list.add(item);
+		
+		return itmLst;
+		
+	}
 	
 	public String [][] listToDoubleArray() {
 		String [][] str = new String[list.size()+1][5];

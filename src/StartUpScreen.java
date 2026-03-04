@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
 
@@ -40,6 +43,8 @@ public class StartUpScreen {
 	private String pathsFile = ApplicationParentFolderHandler.getLocalFilePath("paths.txt");
 	String DEFAULT_STRING = "ID,NAME,AMOUNT,PRICE,AVERAGE_PRICE\n";
 	String FILE_EXTENTION = ".csv";
+	List<String> recentFiles;
+	HashMap <String, String> pathsMap = new HashMap();
 
 	/**
 	 * Launch the application.
@@ -87,14 +92,18 @@ public class StartUpScreen {
 		if (historyFile.exists()) {
 		    try {
 		        // Read all lines into a List
-		        List<String> recentFiles = Files.readAllLines(Path.of(pathsFile));
+		        recentFiles = Files.readAllLines(Path.of(pathsFile));
 		        
 		        // Loop through and add them to the box
 		        for (String path : recentFiles) {
-		        	if(Files.exists(Path.of(path)))
-		        		comboBox.addItem(path);
+		    		String splt [] = path.split(Pattern.quote(File.separator));
+		    		
+		    		pathsMap.put(splt[splt.length-1], path); // MAPPED THE comboBox items to the paths.
+		        	
+		    		if(Files.exists(Path.of(path))) // Update Logic for Item addition.
+		        		comboBox.addItem(splt[splt.length-1]);
 		        	else {
-		        		comboBox.addItem(path);
+		        		comboBox.addItem(splt[splt.length-1]);
 		        		nonExistentPaths.add(path);
 		        	}
 		        }
@@ -232,17 +241,17 @@ public class StartUpScreen {
 			public void actionPerformed(ActionEvent e) {
 				
 				String selectedPath = (String) comboBox.getSelectedItem();
-			    
-				if(!Files.exists(Path.of(selectedPath)) && !selectedPath.equals("No file selected")) {
+				String mappedPath = pathsMap.get(selectedPath);
+				if(!Files.exists(Path.of(mappedPath)) && !mappedPath.equals("No file selected")) {
 					JOptionPane.showMessageDialog(frame, selectedPath + " Does Not Exist !");
 				}
 				else {
 			    //check validity
-			    if (selectedPath != null && !selectedPath.equals("No file selected")) {
-			        System.out.println("Opening recent: " + selectedPath);
+			    if (mappedPath != null && !mappedPath.equals("No file selected")) {
+			        System.out.println("Opening recent: " + mappedPath);
 			        
 			        //Open GUI module for Stock Control Program
-			        GroceryStore gs = new GroceryStore(selectedPath);
+			        GroceryStore gs = new GroceryStore(mappedPath);
 			        frame.dispose();
 			        gs.frame.setVisible(true);
 			    }
