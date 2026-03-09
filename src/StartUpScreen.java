@@ -40,10 +40,11 @@ public class StartUpScreen {
 	
 	
 	private JFrame frame;
-	private String pathsFile = ApplicationParentFolderHandler.getLocalFilePath("paths.txt");
+	static String pathsFile = ApplicationParentFolderHandler.getLocalFilePath("paths.txt");
 	String DEFAULT_STRING = "ID,NAME,AMOUNT,PRICE,AVERAGE_PRICE\n";
 	String FILE_EXTENTION = ".csv";
 	List<String> recentFiles;
+	static String currentFile;
 	HashMap <String, String> pathsMap = new HashMap();
 
 	/**
@@ -200,7 +201,6 @@ public class StartUpScreen {
 					else {
 						try {
 							Boolean lineExists = false;
-							FileWriter fw = new FileWriter(file, true);
 							BufferedReader br = Files.newBufferedReader(Path.of(pathsFile));
 							String line = br.readLine();
 							
@@ -211,13 +211,13 @@ public class StartUpScreen {
 									line = br.readLine();
 								}
 								
-							if(!lineExists)
-								fw.write(ret + "\n");
+							if(!lineExists) {
+								addPath(pathsFile, ret);
+							}
 							else
 								System.out.println("ALREADY EXISTS !");
 							br.close();
 							
-							fw.close();
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
@@ -242,6 +242,9 @@ public class StartUpScreen {
 				
 				String selectedPath = (String) comboBox.getSelectedItem();
 				String mappedPath = pathsMap.get(selectedPath);
+				
+				updatePath(pathsFile, mappedPath);// Add the path to the top of the list
+				
 				if(!Files.exists(Path.of(mappedPath)) && !mappedPath.equals("No file selected")) {
 					JOptionPane.showMessageDialog(frame, selectedPath + " Does Not Exist !");
 				}
@@ -314,22 +317,18 @@ public class StartUpScreen {
         }
     }
 	
-	public void removePath(String pathsFile, String pathToRemove) {
+	public static void removePath(String pathsFile, String pathToRemove) {
 	    try {
 	        Path file = Path.of(pathsFile);
 	        
-	        // Safety check to ensure the history file actually exists
 	        if (!Files.exists(file)) {
 	            return;
 	        }
 
-	        // 1. Read all the paths currently saved in the file
 	        List<String> allLines = Files.readAllLines(file);
 
-	        // 2. Remove the specific dead path from our list
 	        allLines.remove(pathToRemove);
 
-	        // 3. Overwrite the text file entirely with the updated list
 	        Files.write(file, allLines);
 
 	        System.out.println("Successfully removed obsolete path from history.");
@@ -341,30 +340,35 @@ public class StartUpScreen {
 	}
 	
 	public void addPath(String file, String pathToAdd) {
-		try { 
-			Boolean lineExists = false;
-			FileWriter fw = new FileWriter(file, true);
-			BufferedReader br = Files.newBufferedReader(Path.of(file));
-			String line = br.readLine();
-			
-				while(line != null) {
-					if(line.equals(pathToAdd)) {
-						lineExists = true;
-					}
-					line = br.readLine();
-				}
-				
-			if(!lineExists)
-				fw.write(pathToAdd + "\n");
-			else
-				System.out.println("ALREADY EXISTS !");
-			br.close();
-			
-			fw.close();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+	    try {
+	        Path filePath = Path.of(file);
+	        
+	        if (!Files.exists(filePath)) {
+	            Files.createFile(filePath);
+	        }
+
+	        List<String> lines = Files.readAllLines(filePath);
+	        
+	        if (lines.contains(pathToAdd)) {
+	            System.out.println("ALREADY EXISTS !");
+	            return;
+	        }
+	        
+	        lines.add(0, pathToAdd);
+	        
+	        Files.write(filePath, lines);
+	        
+	    } catch (IOException e) {
+	        System.out.println("Failed to write to file: " + e.getMessage());
+	        e.printStackTrace();
+	    }
 	}
+	
+	public void updatePath(String pathsFile, String pathToUpdate){
+		removePath(pathsFile, pathToUpdate);
+		addPath(pathsFile, pathToUpdate);
+	}
+
 	
 	/*		DEPRECATED METHOD
 	 * public void removePath(String paths, String selectedPath) {

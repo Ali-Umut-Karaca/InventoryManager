@@ -105,6 +105,11 @@ public class GroceryStore {
 	private JLabel Info;
 	private List<String[]> databaseList;
 	private JMenuItem mnıtmNewMenuItem_13;
+	private JMenu mnNewMenu_6;
+	private JMenuItem mnıtmNewMenuItem_15;
+	private JMenuItem mnıtmNewMenuItem_16;
+	private JMenuItem mnıtmNewMenuItem_17;
+	private JMenu mnNewMenu_7;
 
 	/**
 	 * Launch the application.
@@ -384,8 +389,53 @@ public class GroceryStore {
 		scrollPane.setViewportView(table);
 		table.setModel(model=new DefaultTableModel());
 		
+		mnıtmNewMenuItem_15 = new JMenuItem("New menu item");
+		scrollPane.setColumnHeaderView(mnıtmNewMenuItem_15);
+		
 		menuBar = new JMenuBar();
 		frame.setJMenuBar(menuBar);
+		
+		mnNewMenu_6 = new JMenu("File");
+		menuBar.add(mnNewMenu_6);
+		
+		mnıtmNewMenuItem_17 = new JMenuItem("Open");
+		mnNewMenu_6.add(mnıtmNewMenuItem_17);
+		
+		mnNewMenu_7 = new JMenu("Open Recent ");
+		mnNewMenu_6.add(mnNewMenu_7);
+		
+		mnıtmNewMenuItem_16 = new JMenuItem("Remove File");
+		mnıtmNewMenuItem_16.addActionListener(
+				new ActionListener(){
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						int confirmation = JOptionPane.NO_OPTION;
+						confirmation = JOptionPane.showConfirmDialog(frame, 
+								"Are you sure you would like to delete"+"'"+fileName+"' ?");
+						
+						if(confirmation == JOptionPane.OK_OPTION) {
+							try {
+								Files.delete(Path.of(fileName));
+								StartUpScreen.removePath(StartUpScreen.pathsFile, fileName);
+								frame.dispose();
+								StartUpScreen.main(null);
+							} catch (IOException e1) {
+								JOptionPane.showMessageDialog(frame,
+										"Failed to Delete file "+"'"+fileName +"'"+" Closing...");
+								System.out.println("Failed to Delete file "+"'"+fileName +"'"+" Closing...");
+								e1.printStackTrace();
+							}
+							
+							
+						}else if(confirmation == JOptionPane.NO_OPTION)
+							System.out.println("I have been No'd!");
+						else if(confirmation == JOptionPane.CANCEL_OPTION)
+							System.out.println("I have been Canceled !");
+					}
+				}
+			);
+		
+		mnNewMenu_6.add(mnıtmNewMenuItem_16);
 		
 		mnNewMenu = new JMenu("Operations");
 		menuBar.add(mnNewMenu);
