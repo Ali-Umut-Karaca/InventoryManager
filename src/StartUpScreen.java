@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
@@ -43,9 +44,9 @@ public class StartUpScreen {
 	static String pathsFile = ApplicationParentFolderHandler.getLocalFilePath("paths.txt");
 	String DEFAULT_STRING = "ID,NAME,AMOUNT,PRICE,AVERAGE_PRICE\n";
 	String FILE_EXTENTION = ".csv";
-	List<String> recentFiles;
+	static List<String> recentFiles;
 	static String currentFile;
-	HashMap <String, String> pathsMap = new HashMap();
+	static HashMap <String, String> pathsMap = new HashMap();
 
 	/**
 	 * Launch the application.
@@ -369,6 +370,13 @@ public class StartUpScreen {
 		addPath(pathsFile, pathToUpdate);
 	}
 
+	static public String findKey(String transfer) {
+		Optional<String> foundKey = StartUpScreen.pathsMap.entrySet().stream()
+	            .filter(entry -> (transfer).equals(entry.getValue()))
+	            .map(Map.Entry::getKey)
+	            .findFirst(); // Returns an Optional<String>
+		return foundKey.get();
+	}
 	
 	/*		DEPRECATED METHOD
 	 * public void removePath(String paths, String selectedPath) {

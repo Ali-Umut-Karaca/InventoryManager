@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
@@ -403,6 +405,26 @@ public class GroceryStore {
 		
 		mnNewMenu_7 = new JMenu("Open Recent ");
 		mnNewMenu_6.add(mnNewMenu_7);
+		
+		//POPULATE RECENT FILES
+		List <String> transfer = StartUpScreen.recentFiles;
+		for(int i = 0; i<transfer.size(); i++) {
+			
+			if(i>=5) break; //Just the first 5 elements
+			
+			
+			
+			JMenuItem fillMenu = new JMenuItem(StartUpScreen.findKey(transfer.get(i)));
+			fillMenu.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					fileName = StartUpScreen.pathsMap.get(fillMenu.getText());
+					loadFrameZeroState();
+				}
+				
+			});
+			mnNewMenu_7.add(fillMenu);
+		}
+		//END POPULATION
 		
 		mnıtmNewMenuItem_16 = new JMenuItem("Remove File");
 		mnıtmNewMenuItem_16.addActionListener(
@@ -901,6 +923,7 @@ public class GroceryStore {
 	}
 	
 	public void loadFrameZeroState() {
+		databaseList = db.loadDataFromFileToList(fileName); //LOAD DEFAULT IMAGE ONTO databaseList
 		itemList.list.clear();
 		String [][] dStr = db.loadDataFromFile(fileName);
 		boolean firstLine = true;
