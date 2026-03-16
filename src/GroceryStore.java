@@ -418,6 +418,10 @@ public class GroceryStore {
 			fillMenu.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					fileName = StartUpScreen.pathsMap.get(fillMenu.getText());
+					db = new DatabaseHandler(fileName);
+					xmlExport = new XMLParser(fileName);
+					txtExport = new TXTParser(fileName);
+					databaseList = db.loadDataFromFileToList(fileName);
 					loadFrameZeroState();
 				}
 				
