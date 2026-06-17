@@ -231,7 +231,7 @@ public class ItemList {
 				itemStr[1],
 				Integer.parseInt(itemStr[2]),
 				Double.parseDouble(itemStr[3]));
-		
+		//TODO: Add the necessary part to handle the Average price setup
 		itmLst.list.removeIf(a -> a.getId() == item.getId());
 		
 		itmLst.list.add(item);
@@ -253,6 +253,7 @@ public class ItemList {
 				str[i+1][1] = list.get(i).getName();
 				str[i+1][2] = Integer.toString(list.get(i).getAmount());
 				str[i+1][3] = Double.toString(list.get(i).getPrice());
+				str[i+1][4] = Double.toString(list.get(i).getAveragePrice());
 		}
 		
 		System.out.println(Arrays.deepToString(str));

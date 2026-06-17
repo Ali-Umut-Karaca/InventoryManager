@@ -23,9 +23,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
@@ -146,21 +148,35 @@ public class StartUpScreen {
 		        
 		        if (result == JFileChooser.APPROVE_OPTION) {
 		            File selectedFile = createFilePath.getSelectedFile();
-		            File creatFile = new File(selectedFile.getAbsolutePath()+
-		            		"\\"+
-		            		JOptionPane.showInputDialog("Enter file name")+
-		            		FILE_EXTENTION);
-		            
-		            if(creatFile.exists()) {
-		            	JOptionPane.showMessageDialog(frame, "This File Already Exists ! Opening existing file...");
-		            }
-		            else {
-		            	try {
-							creatFile.createNewFile();
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
+                    String userInputName = JOptionPane.showInputDialog("Enter file name");
+                    
+                    if (userInputName == null || userInputName.trim().isEmpty()) {//CHECK
+                        return; 
+                    }
+
+                    // 2. Build the initial file path
+                    File creatFile = new File(selectedFile.getAbsolutePath() + File.separator + userInputName + FILE_EXTENTION);
+                    
+                    // 3. The Recurrence Logic
+                    if (creatFile.exists()) {
+                        int counter = 1;
+                        // Keep bumping the number until we find a free name
+                        while (creatFile.exists()) {
+                            String tempName = userInputName + "(" + counter + ")" + FILE_EXTENTION;
+                            creatFile = new File(selectedFile.getAbsolutePath() + File.separator + tempName);
+                            counter++;
+                        }
+                        
+                        // Let the user know we adjusted the name
+                        JOptionPane.showMessageDialog(frame, "File already exists in this folder!\nCreating new file as: " + creatFile.getName());
+                    }
+                    
+                    // 4. Actually create the file on the drive
+                    try {
+                        creatFile.createNewFile();
+                    } catch (IOException e1) {
+                        JOptionPane.showMessageDialog(frame, "Error creating file.");
+                        e1.printStackTrace();
 		            }
 		            		try {
 								FileWriter fileInit = new FileWriter(creatFile);
@@ -170,8 +186,17 @@ public class StartUpScreen {
 								System.out.println(fileAbsAddress);
 								
 								addPath(pathsFile,fileAbsAddress);
-								comboBox.addItem(fileAbsAddress);
+								//comboBox.addItem(fileAbsAddress);
 								
+								String[] splt = fileAbsAddress.split(Pattern.quote(File.separator)); //Change1
+							    pathsMap.put(splt[splt.length-1], fileAbsAddress);
+							    
+							    if (comboBox.getItemCount() > 0 && comboBox.getItemAt(0).equals("No recent projects")) {
+							        comboBox.removeAllItems();
+							    }
+							    comboBox.addItem(splt[splt.length-1]);
+							    comboBox.setEnabled(true);
+							    
 								GroceryStore gs = new GroceryStore(creatFile.getAbsolutePath());
 								frame.dispose();
 								gs.frame.setVisible(true);
@@ -193,10 +218,9 @@ public class StartUpScreen {
 		JButton btnChoose = new JButton("CHOOSE");
 		btnChoose.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				File file = new File(pathsFile);
 				String ret="";
 					ret = pickFileAddress();
-					if(ret.equals("null")){
+					if(ret.equals(null)){
 						System.out.println("Null");
 					}
 					else {
@@ -204,7 +228,6 @@ public class StartUpScreen {
 							Boolean lineExists = false;
 							BufferedReader br = Files.newBufferedReader(Path.of(pathsFile));
 							String line = br.readLine();
-							
 								while(line != null) {
 									if(line.equals(ret)) {
 										lineExists = true;
@@ -219,7 +242,16 @@ public class StartUpScreen {
 								System.out.println("ALREADY EXISTS !");
 							br.close();
 							
-						} catch (IOException e1) {
+							String[] splt = ret.split(Pattern.quote(File.separator));
+						    pathsMap.put(splt[splt.length-1], ret);
+						    if (comboBox.getItemCount() > 0 && comboBox.getItemAt(0).equals("No recent projects")) {
+						        comboBox.removeAllItems();
+						    }
+						    comboBox.addItem(splt[splt.length-1]);
+						    comboBox.setEnabled(true);
+						    
+							
+						} catch (IOException e1 ) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
@@ -280,7 +312,11 @@ public class StartUpScreen {
 		            
 		            if (isDelete == JOptionPane.YES_OPTION) {
 		                removePath(pathsFile, nonExistentPaths.get(i));
-		                comboBox.removeItem(nonExistentPaths.get(i));
+		                String[] splt = nonExistentPaths.get(i).split(Pattern.quote(File.separator));
+		                String shortName = splt[splt.length - 1];
+		                
+		                comboBox.removeItem(shortName);
+		                pathsMap.remove(shortName);
 		            } 
 		            else {
 		                System.out.println("User Declined to remove Obsolete path.");
@@ -334,40 +370,89 @@ public class StartUpScreen {
 
 	        System.out.println("Successfully removed obsolete path from history.");
 
+	        recentFiles = Files.readAllLines(Path.of(pathsFile));
+	        
 	    } catch (IOException e) {
 	        System.out.println("Failed to remove path: " + e.getMessage());
 	        e.printStackTrace();
 	    }
 	}
 	
-	public void addPath(String file, String pathToAdd) {
+	public static void addPath(String file, String pathToAdd) {
 	    try {
 	        Path filePath = Path.of(file);
 	        
 	        if (!Files.exists(filePath)) {
 	            Files.createFile(filePath);
 	        }
-
+	        
 	        List<String> lines = Files.readAllLines(filePath);
 	        
-	        if (lines.contains(pathToAdd)) {
-	            System.out.println("ALREADY EXISTS !");
-	            return;
+	     // 1. Collect all existing filenames into a Set for quick and easy comparison
+	        Set<String> existingFileNames = new HashSet<>();
+	        for (String line : lines) {
+	            if (!line.trim().isEmpty()) {
+	                existingFileNames.add(Path.of(line).getFileName().toString());
+	            }
+	        }
+
+	        // 2. Extract the incoming file's name, parent directory, and extension
+	        Path newPath = Path.of(pathToAdd);
+	        String originalFileName = newPath.getFileName().toString();
+	        
+	        // Get the parent path, and add the separator back if it exists
+	        String parentDir = newPath.getParent() != null ? newPath.getParent().toString() + File.separator : "";
+	        
+	        String nameWithoutExt = originalFileName;
+	        String ext = "";
+	        int dotIndex = originalFileName.lastIndexOf('.');
+	        
+	        // If the file has an extension, separate it so we can put the (1) before it
+	        if (dotIndex > 0) {
+	            nameWithoutExt = originalFileName.substring(0, dotIndex);
+	            ext = originalFileName.substring(dotIndex); // Includes the dot, e.g., ".txt"
+	        }
+
+	        // 3. Find the next available unique name
+	        String uniqueFileName = originalFileName;
+	        int counter = 1;
+	        
+	        // Loop continuously until we find a filename that IS NOT in our list
+	        while (existingFileNames.contains(uniqueFileName)) {
+	            uniqueFileName = nameWithoutExt + "(" + counter + ")" + ext;
+	            counter++;
+	        }
+
+	        // 4. Reconstruct the full path
+	        String finalPathToAdd = parentDir + uniqueFileName;
+	        
+	        if (counter > 1) { // Only show the dialog if we actually changed the name
+	            JOptionPane.showMessageDialog(null, "File path added as: " + finalPathToAdd);
 	        }
 	        
-	        lines.add(0, pathToAdd);
+	        
+	        lines.add(0, finalPathToAdd);
 	        
 	        Files.write(filePath, lines);
 	        
+	        recentFiles = Files.readAllLines(Path.of(pathsFile));
 	    } catch (IOException e) {
 	        System.out.println("Failed to write to file: " + e.getMessage());
 	        e.printStackTrace();
 	    }
+	    
 	}
 	
-	public void updatePath(String pathsFile, String pathToUpdate){
+	public static void updatePath(String pathsFile, String pathToUpdate){
 		removePath(pathsFile, pathToUpdate);
 		addPath(pathsFile, pathToUpdate);
+		
+		try {
+			recentFiles = Files.readAllLines(Path.of(pathsFile));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	static public String findKey(String transfer) {
@@ -375,7 +460,7 @@ public class StartUpScreen {
 	            .filter(entry -> (transfer).equals(entry.getValue()))
 	            .map(Map.Entry::getKey)
 	            .findFirst(); // Returns an Optional<String>
-		return foundKey.get();
+		return foundKey.orElse("Can't find Keys");
 	}
 	
 	/*		DEPRECATED METHOD
@@ -409,4 +494,66 @@ public class StartUpScreen {
 			e1.printStackTrace();
 		}
 	}*/
+	
+	public void handleCreateButton(String selectedDirectory, String desiredFileName) {
+	    try {
+	        File newFile = new File(selectedDirectory, desiredFileName);
+	        boolean nameChanged = false;
+
+	        // 1. Check if the physical file already exists in this folder
+	        if (newFile.exists()) {
+	            nameChanged = true;
+	            String nameWithoutExt = desiredFileName;
+	            String ext = "";
+	            int dotIndex = desiredFileName.lastIndexOf('.');
+	            
+	            if (dotIndex > 0) {
+	                nameWithoutExt = desiredFileName.substring(0, dotIndex);
+	                ext = desiredFileName.substring(dotIndex);
+	            }
+
+	            int counter = 1;
+	            // 2. Loop until we find a filename that doesn't exist on the drive
+	            while (newFile.exists()) {
+	                String tempName = nameWithoutExt + "(" + counter + ")" + ext;
+	                newFile = new File(selectedDirectory, tempName);
+	                counter++;
+	            }
+	        }
+
+	        // 3. Actually create the physical file
+	        if (newFile.createNewFile()) {
+	            if (nameChanged) {
+	                JOptionPane.showMessageDialog(null, 
+	                    "A file with that name already existed.\nCreated new file as: " + newFile.getName(), 
+	                    "File Renamed", JOptionPane.INFORMATION_MESSAGE);
+	            }
+	            
+	            // 4. Send the clean, absolute path to your (reverted) addPath method
+	            addPath(pathsFile, newFile.getAbsolutePath()); 
+	            
+	            // Proceed to open/load the file into your app...
+	        }
+
+	    } catch (IOException e) {
+	        JOptionPane.showMessageDialog(null, "Error creating file: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void handleChooseButton() {
+	    JFileChooser fileChooser = new JFileChooser();
+	    int result = fileChooser.showOpenDialog(null); // Or pass your main frame
+
+	    if (result == JFileChooser.APPROVE_OPTION) {
+	        File chosenFile = fileChooser.getSelectedFile();
+	        
+	        if (chosenFile.exists()) {
+	            // 1. Send the clean, absolute path straight to the text file
+	            addPath(pathsFile, chosenFile.getAbsolutePath());
+	            
+	            // Proceed to open/load the file into your app...
+	        }
+	    }
+	}
 }

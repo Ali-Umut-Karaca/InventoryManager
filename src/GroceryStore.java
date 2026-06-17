@@ -401,6 +401,13 @@ public class GroceryStore {
 		menuBar.add(mnNewMenu_6);
 		
 		mnıtmNewMenuItem_17 = new JMenuItem("Open");
+		mnıtmNewMenuItem_17.addActionListener(
+				new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						
+					}
+		});
 		mnNewMenu_6.add(mnıtmNewMenuItem_17);
 		
 		mnNewMenu_7 = new JMenu("Open Recent ");
@@ -412,25 +419,24 @@ public class GroceryStore {
 			
 			if(i>=5) break; //Just the first 5 elements
 			
-			
-			
 			JMenuItem fillMenu = new JMenuItem(StartUpScreen.findKey(transfer.get(i)));
 			fillMenu.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
+					
 					fileName = StartUpScreen.pathsMap.get(fillMenu.getText());
 					db = new DatabaseHandler(fileName);
 					xmlExport = new XMLParser(fileName);
 					txtExport = new TXTParser(fileName);
 					databaseList = db.loadDataFromFileToList(fileName);
+					StartUpScreen.updatePath(StartUpScreen.pathsFile, fileName);
 					loadFrameZeroState();
 				}
-				
 			});
 			mnNewMenu_7.add(fillMenu);
 		}
 		//END POPULATION
 		
-		mnıtmNewMenuItem_16 = new JMenuItem("Remove File");
+		mnıtmNewMenuItem_16 = new JMenuItem("Delete File");
 		mnıtmNewMenuItem_16.addActionListener(
 				new ActionListener(){
 					@Override
@@ -579,7 +585,7 @@ public class GroceryStore {
 					}
 				}
 				if(modifyDatabase) {
-					removeLineFromFile(fileName,str);
+					TXTParser.removeLineFromFile(fileName,str);
 					sqlHandler.deleteRow(Integer.parseInt(str));
 				}
 			}
@@ -645,9 +651,16 @@ public class GroceryStore {
 						str[col] = inP;
 					
 				}
-				databaseList.removeIf(a -> a[0].equals(str[0]));
-				databaseList.add(str);
+				databaseList.removeIf(a -> a[0].equals(str[0])); // Delete the matching text from the existing database List
+				databaseList.add(str); // Add the newly created string to the list
 				loadNewFrameFromItemList(itemList.updateItemInList(str).idOrder());
+				
+			if(modifyDatabase == true) {
+				//TODO: Add the necessary parts to handle the actual file writing operations.
+					//TODO: Do this by writing a switch or update function in the right class and call it here.
+				TXTParser.updateLineOnFile(fileName, databaseList);
+			}
+			
 			}
 		});
 		mnNewMenu.add(mnıtmNewMenuItem_13);
@@ -878,9 +891,13 @@ public class GroceryStore {
             			dStr[i][1],
             			Integer.parseInt(dStr[i][2]),
             			Double.parseDouble(dStr[i][3])
-            			));
+            			).setAveragePrice(dStr[i].length > 4 ? Double.parseDouble(dStr[i][4]) : 0));
             	
             	dStr[i][3] +=" $";
+            	
+            	if(dStr[i].length > 4 )
+            		dStr[i][4] += " $";
+            	
             	model.addRow(dStr[i]);
 			}
 		}
@@ -906,16 +923,20 @@ public class GroceryStore {
             			dStr[i][1],
             			Integer.parseInt(dStr[i][2]),
             			Double.parseDouble(dStr[i][3])
-            			));
+            			).setAveragePrice(dStr[i].length > 4 ? Double.parseDouble(dStr[i][4]) : 0));
             	
             	dStr[i][3] +=" $";
+            	
+            	if(dStr[i].length > 4 )
+            		dStr[i][4] += " $";
+            	
             	model.addRow(dStr[i]);
 			}
 		}
 		itemList.printList();
-		System.out.println(itemList.getAverage());
+		/*System.out.println(itemList.getAverage());
 		System.out.println(itemList.getAverage("Lambda"));
-		
+		*/
 		System.out.println("DB:");
 		try {
 			sqlHandler.printTable();
@@ -927,6 +948,36 @@ public class GroceryStore {
 	}
 	
 	public void loadFrameZeroState() {
+		
+		//S:
+		mnNewMenu_7.removeAll(); // Remove Old List
+		List <String> transfer = StartUpScreen.recentFiles;
+		for(int i = 0; i<transfer.size(); i++) {
+			
+			if(i>=5) break; //Just the first 5 elements
+			
+			JMenuItem fillMenu = new JMenuItem(StartUpScreen.findKey(transfer.get(i)));
+			fillMenu.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					
+					fileName = StartUpScreen.pathsMap.get(fillMenu.getText());
+					db = new DatabaseHandler(fileName);
+					xmlExport = new XMLParser(fileName);
+					txtExport = new TXTParser(fileName);
+					databaseList = db.loadDataFromFileToList(fileName);
+					StartUpScreen.updatePath(StartUpScreen.pathsFile, fileName);
+					loadFrameZeroState();
+				}
+			});
+			mnNewMenu_7.add(fillMenu);
+		}
+		//E:
+		
+		//Set the Texts to empty or default.
+		Info.setText("");
+		BackButtonMenuBar.doClick(); // Set Search State to default action.
+		BackButtonMenuBar.setVisible(false);
+		//
 		databaseList = db.loadDataFromFileToList(fileName); //LOAD DEFAULT IMAGE ONTO databaseList
 		itemList.list.clear();
 		String [][] dStr = db.loadDataFromFile(fileName);
@@ -943,9 +994,13 @@ public class GroceryStore {
             			dStr[i][1],
             			Integer.parseInt(dStr[i][2]),
             			Double.parseDouble(dStr[i][3])
-            			));
+            			).setAveragePrice(dStr[i].length > 4 ? Double.parseDouble(dStr[i][4]) : 0));
             	
             	dStr[i][3] +=" $";
+            	
+            	if(dStr[i].length > 4 )
+            		dStr[i][4] += " $";
+            	
             	model.addRow(dStr[i]);
 			}
 		}
@@ -961,8 +1016,11 @@ public class GroceryStore {
 		//sqlHandler.writeRow(itemList.listToDoubleArray()[15]);
 	}
 	
+	//TODO: Move this Method to the DatabaseHandler or the TXT Parser classes and make it static for use in everywhere.
+		//DONE !
 	
-	public void removeLineFromFile(String fileName, String lineToRemove) {
+	//DEPRECATED METHOD REMOVE IN STABLE RELEASE|||
+	/*public void removeLineFromFile(String fileName, String lineToRemove) {
 	    try {
 	        Path file = Path.of(fileName);
 
@@ -980,7 +1038,7 @@ public class GroceryStore {
 	    } catch (IOException ex) {
 	        ex.printStackTrace();
 	    }
-	}
+	}*/
 	
 	
 	/*		DEPRECATED METHOD

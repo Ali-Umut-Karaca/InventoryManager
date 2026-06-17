@@ -14,6 +14,7 @@ public class Item {
 	private String name;
 	private int amount;
 	private double price;
+	private double averagePrice;
 	private double counter = 0;
 	//RETURN INDEX
 	private static int index = -1;
@@ -56,6 +57,19 @@ public class Item {
 		
 		return this.ret;
 		
+	}
+	
+	public Item setAveragePrice(double price) {
+		
+		this.averagePrice = price;
+		
+		return this;
+	}
+	
+	
+	
+	public double getAveragePrice() {
+		return averagePrice;
 	}
 	
 	
